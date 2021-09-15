@@ -13,6 +13,8 @@ try{
 
 exports.listAll = async (req,res,next) =>{
     try{
+        const users = await User.listAll().toArray();
+        console.log (users);
         res.status(200).json(await User.listAll().toArray());
     }catch(error){
         next(error);
@@ -44,6 +46,7 @@ exports.update = async (req,res,next) =>{
     
 exports.deleteById = async (req,res,next) =>{
     try{
+        
         await User.deleteById(req.params._id)
         console.log("Deleted Successfully")
         res.status(200).end();
@@ -53,12 +56,13 @@ exports.deleteById = async (req,res,next) =>{
     };
 
 
-    exports.login = (req, res, next)=>{
+    exports.login = async (req, res, next)=>{
       try{
-        const user = new User(null, req.body.username, req.body.password, null).login();
+        const user = await new User(null, req.body.username, req.body.password, null).login();
+            console.log(user)
         if(user){
             const accessToken = jwt.sign({username:user.username, role:user.role},accessTokenSecret);
-            console.log(user.username)
+            // console.log(user.username)
             res.json({accessToken});
         }else{
             res.status(200).json({"error":"Invalid user credentials ! Try again."})

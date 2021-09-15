@@ -1,0 +1,336 @@
+//////////////////////////////////////////////////////////////////////////////////
+To Work with Express
+Install express generator npm i -g express-generator or can start with npm init (manual process)
+next time you can start with :- express nameOfYourApp
+Install package-lock.json:- npm install
+npm i -g mongodb
+npm i -g jsonwebtoken
+npm i -g cors
+npm i -g axios
+npm i -g nodemon
+
+const express = require('express');
+const path = require('path');
+const cors = require('cors')
+
+
+
+const app = express();
+
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cors())
+
+mongoConnect(()=>{
+    app.listen(4000,()=>console.log("running 4000........"));
+});
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+Database Creation 
+const mongodb = require('mongodb');
+const MongoClient = mongodb.MongoClient;
+
+let _db;
+
+const mongoConnect = (callback) => {
+    // MongoClient.connect('mongodb+srv://yogesh:<123>@cluster0.igdip.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', {
+        MongoClient.connect('mongodb://localhost:27017', {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    })
+        .then(client => {
+            _db = client.db('cs568');
+            callback();
+        })
+        .catch(err => console.log(err));
+}
+
+const getDB = () => {
+    if (_db) {
+        return _db;
+    }
+    throw new Error("No Database Found !")
+};
+
+exports.mongoConnect = mongoConnect;
+exports.getDB = getDB;
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+In Class Creation (model)
+const { ObjectID } = require('mongodb').ObjectId; to used the ObjectID in class
+const getDB = require('./mongoDb').getDB;
+// const collection = getDB().collection('nameOfCollection') // This doesn't work.
+
+module.exports = class nameOfClass {
+    constructor(_id, name, rating, genre) {
+        this._id = _id;
+        this.name = name;
+        this.rating = rating;
+        this.genre = genre
+    }
+
+    save() {
+        return getDB().collection('nameOfCollection').insertOne(this);
+    }
+
+    static listAll() {
+        return getDB().collection('nameOfCollection').find();
+    }
+
+    static searchById(_id) {
+        return getDB().collection('nameOfCollection').findOne({ _id: _id});
+    }
+
+
+    update(_id) {
+        return getDB().collection('nameOfCollection').updateOne({ _id: _id }, { $set: { name: this.name, rating: this.rating, genre: this.genre } });
+    }
+
+    static deleteById(_id) {
+        return getDB().collection('nameOfCollection').deleteOne({ _id: _id });
+    }
+
+};
+
+  login() {
+        return getDB().collection('nameOfCollection').findOne({username: this.username, password : this.password });
+    }
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+Creation of controller
+const User = require('./userClass');
+const jwt = require('jsonwebtoken');
+const accessTokenSecret = "Yogesh";
+
+exports.save = async (req,res,next) =>{
+try{
+    const user = req.body;
+    res.status(200).json(await new User(user._id,user.username, user.password, user.role).save())
+}catch(error){
+    next(error);
+}
+}
+
+exports.listAll = async (req,res,next) =>{
+    try{
+        res.status(200).json(await User.listAll().toArray());
+    }catch(error){
+        next(error);
+    }
+    }
+
+exports.searchById = async (req,res,next)=>{
+    try{
+        const id = Number(req.params.id); // make sure id is converted to Number if your input is in number.
+        const id = req.params.key // Since _id is automatic, add one more field "key" and use this key as an id.
+        res.status(200).json(await User.searchById(id))
+    }catch(error){
+        next(error)
+    }
+}
+
+
+        
+exports.update = async (req,res,next) =>{
+    try{
+         const id = Number(req.params.id); 
+        const user = req.body;
+        const updatedUser = new User(user._id, user.username, user.password, user.role, user.id);
+        res.status(200).json(await updatedUser.update(id));
+    }catch(error){
+        next(error);
+    }
+    };
+
+
+    
+exports.deleteById = async (req,res,next) =>{
+    try{
+         const id = Number(req.params.id); 
+        await User.deleteById(id)
+        console.log("Deleted Successfully")
+        res.status(200).end();
+    }catch(error){
+        next(error);
+    }
+    };
+
+
+    exports.login = (req, res, next)=>{
+      try{
+        const user = new User(null, req.body.username, req.body.password, null).login();
+        if(user){
+            const accessToken = jwt.sign({username:user.username, role:user.role},accessTokenSecret);
+            console.log(user.username)
+            res.json({accessToken});
+        }else{
+            res.status(200).json({"error":"Invalid user credentials ! Try again."})
+        }
+    }catch(err){
+      next(err)  
+    }
+    };
+
+exports.authorize = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader) {
+        const token = authHeader.split(' ')[1];
+        jwt.verify(token, accessTokenSecret, (err, user) => {
+            console.log(user);
+            if (err) {
+                return res.status(403).json({ "error": "Forbidden" });
+            }
+            req.user = user;
+            next();
+        });
+    } else {
+        res.status(401).json({ "error": "Unauthorized" });
+    }
+}
+
+exports.authorizeAdmin = (req, res, next) => {
+    if (req.user.role === 'admin') {
+        next();
+    } else {
+        return res.status(403).json({ "error": "Forbidden" });
+    }
+}
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+Creation of router
+
+const express = require('express');
+const router = express.Router();
+
+const userController = require('../userController');
+
+router.get('/',userController.listAll);
+router.get('/:_id', userController.searchById);
+router.post('/',userController.save);
+router.put('/:_id',userController.update);
+router.delete('/:_id',userController.deleteById);
+router.post('/login',userController.login);
+router.use(userController.authorize)
+
+module.exports=router;
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+Connecting to Github
+Login to github.com
+Click New button
+Repository Name + Select Public  
+Add Readme File  
+Add Ignore (Select ActionScript) 
+Choose a Licence (Select Apache Licence)
+Click Code button
+Copy Clonning Code
+
+In VSCode Select the folder where to clone (Open in integrated Terminal)
+git clone "Paste the copied clonning code" (Example:- https://github.com/yghimiray/CS568.git)
+
+The cloned folder appears in the VSCode. Select this folder(Open in integrated Terminal)
+Inside this folder, there is gitIgnore file, Add node_modules in it to avoid pusi=hing this folder to git.
+make sure all your VSCode folders are inside this cloned folder
+git status (check where are you)
+
+git add . (add all files)
+git commit -m "Your comments"
+git push origin main
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+Working with React
+
+npm i -g create-react-app  // This will install react globally
+next time just create-react-app  (nameOfYourReactApp)
+npm i react-router
+npm i react-router-DOM
+
+
+If you are using loop iteration to display the elements, we should use "Key" to avoid error in Virtual DOM.
+Never edit the parameter itself, copy it and edit the contents of that copy.
+Do not use push() in the state, use concat(). Always maintain immutaility of the state. So edit the copy of state.
+Use this.setState(copy);
+While passing a reference to a function/ method, use arrow function inside {}
+
+Class component should Always override render().
+Shortcut to create class component (rcc+tab), functional component (rfc+tab)
+
+In parent component; 
+<childComponent   // inside first angular bracket.
+key = {},
+name={} 
+propertyChange={(event) => { this.propertyChange(id, event) }}
+delete={() => { this.nameOfDeleteMethod(id) }}       etc...
+>
+Any thing between two angular brackets is called "Children" can be accessed in childComponent {this.props.children}
+</childComponent>
+
+In child Component;
+Name: {this.props.name} 
+{this.props.children}
+<input type='text' value={this.props.nameOfProperty} name="nameOfProperty"(not in {})  onChange={this.props.propertyChange}/>
+<button onClick= {this.props.delete} > Delete  </button> etc...
+
+
+
+propertyChange = (id, event) => {
+    const result = this.state.nameOfArrayInState.map((item) => {
+      if (item.id === id) {
+        let copy = { ...item };
+        copy[event.target.name] = event.target.value;
+        return copy;
+      }
+      return movie;
+    })
+    this.setState({ nameOfArrayInState: result })
+  }
+
+
+
+npm i axios
+import axios from 'axios';
+
+In Index.js File:-
+axios.defaults.baseURL ="................"
+This will help us to avoid typing the baseURL multiple times.
+
+
+Use <BrowserRouter> after render()return(
+import {BrowserRouter} from 'react-router-dom'
+
+Instead of <a href=""> use <Link to = '/' OR to ='/movies' etc.. (any suitable path name)>
+import { Link } from 'react-router';
+
+<switch>
+<Route exact path= '/' component = {nameOfComponent}>
+<Route exact path= '/' component = {nameOfComponent}>
+<Route exact path= '/' component = {nameOfComponent}>
+</switch>
+
+After we use <BrowserRouter> it creates three components (history, location and match). 
+It can be accessed in immediate child only. To use it from children of other level, use
+export default withRouter( nameOfComponent)
+
+
+To read the id from match component {this.props.match.params.id}

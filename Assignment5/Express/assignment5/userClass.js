@@ -3,14 +3,17 @@ const getDB = require('./mongoDb').getDB;
 // let collection = getDB().collection('users')
 
 module.exports = class User {
-    constructor(_id, username,password, role) {
+    constructor(_id, username, password, role) {
         this._id = _id;
         this.username = username;
         this.password = password;
         this.role = role
     }
 
-    
+    // collection =()=>{
+    //     return getDB().collection('users');
+    // }
+
     save() {
         return getDB().collection('users').insertOne(this);
     }
@@ -20,7 +23,7 @@ module.exports = class User {
     }
 
     static searchById(_id) {
-        return getDB().collection('users').findOne({ _id: _id});
+        return getDB().collection('users').findOne({ _id: _id });
     }
 
 
@@ -33,9 +36,7 @@ module.exports = class User {
     }
 
     login() {
-        return getDB().collection('users').find((user)=>{
-            return user.username===this.username && user.password ===this.password;
-        });
-    }  
+        return getDB().collection('users').findOne({username: this.username, password : this.password });
+    }
 
 };

@@ -1,12 +1,14 @@
 const { ObjectID } = require('mongodb').ObjectId;
+// const { ObjectID } = require('mongodb');
 const getDB = require('./mongoDb').getDB;
 
 module.exports = class Movie {
-    constructor(_id, name, rating, genre) {
+    constructor(_id, name, rating, genre,id) {
         this._id = _id;
         this.name = name;
         this.rating = rating;
         this.genre = genre
+        this.id=id
     }
 
     save() {
@@ -17,17 +19,17 @@ module.exports = class Movie {
         return getDB().collection('movies').find();
     }
 
-    static searchById(_id) {
-        return getDB().collection('movies').findOne({ _id: _id});
+    static searchById(id) {
+        return getDB().collection('movies').findOne({id:id});
     }
 
 
-    update(_id) {
-        return getDB().collection('movies').updateOne({ _id: _id }, { $set: { name: this.name, rating: this.rating, genre: this.genre } });
+    update(id) {
+        return getDB().collection('movies').updateOne({ id:id }, { $set: { name: this.name, rating: this.rating, genre: this.genre } });
     }
 
-    static deleteById(_id) {
-        return getDB().collection('movies').deleteOne({ _id: _id });
+    static deleteById(id) {
+        return getDB().collection('movies').deleteOne({ id:id });
     }
 
 };
