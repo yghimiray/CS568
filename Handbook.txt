@@ -3,11 +3,10 @@ To Work with Express
 Install express generator npm i -g express-generator or can start with npm init (manual process)
 next time you can start with :- express nameOfYourApp
 Install package-lock.json:- npm install
-npm i -g mongodb
-npm i -g jsonwebtoken
-npm i -g cors
-npm i -g axios
-npm i -g nodemon
+npm i  mongodb
+npm i  jsonwebtoken
+npm i cors
+npm i nodemon
 
 const express = require('express');
 const path = require('path');
@@ -264,8 +263,8 @@ Working with React
 npm i -g create-react-app  // This will install react globally
 next time just create-react-app  (nameOfYourReactApp)
 npm i react-router
-npm i react-router-DOM
-
+npm i react-router-dom
+npm i axios
 
 If you are using loop iteration to display the elements, we should use "Key" to avoid error in Virtual DOM.
 Never edit the parameter itself, copy it and edit the contents of that copy.

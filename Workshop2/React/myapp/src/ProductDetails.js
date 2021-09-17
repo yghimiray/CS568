@@ -1,28 +1,43 @@
 import React, { Component } from 'react'
+import axios from 'axios'
 
 export default class ProductDetails extends Component {
-state ={
-    product:{
-        name:'',
-        price:0,
-        brand:'',
-        model:''
+    state = {
+        product: {
+        }
     }
-}
 
-componentDidMount(){
+    componentDidMount() {
+        const PID = this.props.match.params.PID;
+        axios.get('/products/'+PID)
+        .then((response)=>{
+            let copy= {...this.state}
+            copy.product=response.data
+            this.setState(copy)       
+        })
+    }
 
-}
+    updateProduct = (PID) => {
+        this.props.history.push("/product-update/" + PID)
+    }
 
+
+    deleteProduct = (PID) => {
+        this.props.history.push("/product-delete/" + PID)
+    }
+    
 
     render() {
         return (
             <div>
-                <h3>Product Detail</h3>
-                <p>{this.state.product.name}</p>
-                <p>{this.state.product.price}</p>
-                <p>{this.state.product.brand}</p>
-                <p>{this.state.product.model}</p>
+               <h2>Details of this Product</h2>
+                <p>ID:{this.state.product.PID}</p>
+                <p>Name:{this.state.product.name}</p>
+                <p>Price:{this.state.product.price}</p>
+                <p>Review:{this.state.product.review}</p>
+                <p>Rating:{this.state.product.rating}</p>
+                <button onClick={()=>{this.updateProduct(this.state.product.PID)}}>Update</button> 
+                <button onClick={()=>{this.deleteProduct(this.state.product.PID)}}>Delete</button> 
             </div>
         )
     }
